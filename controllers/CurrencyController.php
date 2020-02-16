@@ -26,14 +26,14 @@ class CurrencyController extends ActiveController
 	 */
 	public function prepareDataProvider()
 	{
-		$get = Yii::$app->request->queryParams;
 		$where = ['date' => date('Y-m-d')];
-		if (isset($get['filter'])) {
-			if (isset($get['filter']['char_code'])) {
-				$where['char_code'] = (string) $get['filter']['char_code'];
+		$filter = Yii::$app->request->get('filter');
+		if ($filter) {
+			if (isset($filter['char_code'])) {
+				$where['char_code'] = (string) $filter['char_code'];
 			}
-			if (isset($get['filter']['date'])) {
-				$where['date'] = (string) $get['filter']['date'];
+			if (isset($filter['date'])) {
+				$where['date'] = (string) $filter['date'];
 			}
 		}
 
