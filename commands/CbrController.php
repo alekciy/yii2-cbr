@@ -118,7 +118,8 @@ class CbrController extends Controller
 			if (!$currency) {
 				if (empty($currencyList)) {
 					// Загружаем курс валют с сайта ЦБ
-					$currencyList = (new Client())->load($date);
+					$cbrClient = Yii::$app->get('cbrClient');
+					$currencyList = $cbrClient->load($date);
 				}
 				if (!isset($currencyList[$currencyCode])) {
 					throw new \Exception('Неизвестный код валюты ' . $currencyCode);
