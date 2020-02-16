@@ -9,7 +9,6 @@ use DOMDocument;
 use DOMNode;
 use DOMXPath;
 use Exception;
-use GuzzleHttp\Psr7\Uri;
 use Yii;
 
 class Client

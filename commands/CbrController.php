@@ -2,7 +2,6 @@
 
 namespace app\commands;
 
-use app\components\cbr_currency\Client;
 use app\components\cbr_currency\models\Currency;
 use DateInterval;
 use DatePeriod;
@@ -104,7 +103,7 @@ class CbrController extends Controller
 			if (!$currency) {
 				if (empty($currencyList)) {
 					// Загружаем курс валют с сайта ЦБ
-					$currencyList = (new Client())->load($date);
+					$currencyList = $this->cbrClient->load($date);
 				}
 				$currency = $currencyList[$currencyCode];
 				if (!$currency->save()) {

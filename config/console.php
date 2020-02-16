@@ -1,7 +1,10 @@
 <?php
 
+use yii\helpers\ArrayHelper;
+
 $params = require __DIR__ . '/params.php';
 $db = require __DIR__ . '/db.php';
+$commonComponents = require __DIR__ . '/common_components.php';
 
 $config = [
     'id' => 'basic-console',
@@ -44,5 +47,7 @@ if (YII_ENV_DEV) {
         'class' => 'yii\gii\Module',
     ];
 }
+
+$config['components'] = ArrayHelper::merge($commonComponents, $config['components']);
 
 return $config;

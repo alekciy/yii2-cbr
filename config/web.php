@@ -1,7 +1,10 @@
 <?php
 
+use yii\helpers\ArrayHelper;
+
 $params = require __DIR__ . '/params.php';
 $db = require __DIR__ . '/db.php';
+$commonComponents = require __DIR__ . '/common_components.php';
 
 $config = [
     'id' => 'basic',
@@ -80,5 +83,6 @@ if (YII_ENV_DEV) {
         //'allowedIPs' => ['127.0.0.1', '::1'],
     ];
 }
+$config['components'] = ArrayHelper::merge($commonComponents, $config['components']);
 
 return $config;
