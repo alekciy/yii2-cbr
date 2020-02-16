@@ -2,6 +2,7 @@
 
 namespace app\commands;
 
+use app\components\cbr_currency\Client;
 use app\components\cbr_currency\models\Currency;
 use DateInterval;
 use DatePeriod;
@@ -12,8 +13,22 @@ use yii\db\Exception;
 
 class CbrController extends Controller
 {
+	/** @var array Список кодов валют с которыми работает компонент */
+	public $currencyList = [];
+
 	/** @var int Максимальное дневное падения курса рубля */
-	const MAX_DROP_DAILY = 2;
+	public $maxDropDaily = 2;
+
+	public function init()
+	{
+		parent::init();
+		$this->maxDropDaily = (int) isset(Yii::$app->params['currency']['maxDropDaily'])
+			? Yii::$app->params['currency']['maxDropDaily']
+			: 2;
+		$this->currencyList = (array) isset(Yii::$app->params['currency']['currencyList'])
+			? Yii::$app->params['currency']['currencyList']
+			: [];
+	}
 
 	/**
 	 * Проверить уровень падения курса.
@@ -24,7 +39,7 @@ class CbrController extends Controller
 	{
 		$today = new DateTime();
 		$yesterday = (clone $today)->modify('1 days ago');
-		foreach (['USD', 'EUR'] as $currencyCode) {
+		foreach ($this->currencyList as $currencyCode) {
 			// Текущий курс
 			$todayCurrency = Currency::find()->where([
 				'date' => $today->format('Y-m-d'),
@@ -49,17 +64,17 @@ class CbrController extends Controller
 			}
 
 			$diff = round($todayCurrency->value, 4) - round($yesterdayCurrency->value, 4);
-			if ($diff > self::MAX_DROP_DAILY) {
+			if ($diff > $this->maxDropDaily) {
 				// Поднимаем тревогу если вышли за границы
 				$msg = sprintf('Для валюты %s курс упал более чем на %s рублей (с %.4f до %.4f)',
-					$currencyCode, self::MAX_DROP_DAILY, $yesterdayCurrency->value, $todayCurrency->value
+					$currencyCode, $this->maxDropDaily, $yesterdayCurrency->value, $todayCurrency->value
 				);
 				$this->adminNotify($msg, 'error');
 				Yii::error($msg);
 			} else {
 				// Если все нормально просто уведомляем, что все ок
 				$msg = sprintf('Изменение курса для %s не превысило %s рублей (с %.4f до %.4f)',
-					$currencyCode, self::MAX_DROP_DAILY, $yesterdayCurrency->value, $todayCurrency->value
+					$currencyCode, $this->maxDropDaily, $yesterdayCurrency->value, $todayCurrency->value
 				);
 				$this->adminNotify($msg, 'info');
 				Yii::info($msg);
@@ -94,7 +109,7 @@ class CbrController extends Controller
 	public function loadByDate(DateTime $date)
 	{
 		$currencyList = [];
-		foreach (['USD', 'EUR'] as $currencyCode) {
+		foreach ($this->currencyList as $currencyCode) {
 			$currency = Currency::findOne([
 				'date' => $date->format('Y-m-d'),
 				'char_code' => $currencyCode
@@ -103,7 +118,10 @@ class CbrController extends Controller
 			if (!$currency) {
 				if (empty($currencyList)) {
 					// Загружаем курс валют с сайта ЦБ
-					$currencyList = $this->cbrClient->load($date);
+					$currencyList = (new Client())->load($date);
+				}
+				if (!isset($currencyList[$currencyCode])) {
+					throw new \Exception('Неизвестный код валюты ' . $currencyCode);
 				}
 				$currency = $currencyList[$currencyCode];
 				if (!$currency->save()) {
